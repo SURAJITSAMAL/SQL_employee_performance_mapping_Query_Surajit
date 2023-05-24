@@ -1,0 +1,154 @@
+CREATE DATABASE IF NOT EXISTS employee_db;
+------------------------------------------------------
+CREATE TABLE employee_db.emp_record_table(
+EMP_ID VARCHAR(255) NOT NULL,
+FIRST_NAME VARCHAR(255) NOT NULL,
+LAST_NAME VARCHAR(255) NOT NULL,
+GENDER CHAR(1) NOT NULL,
+ROLE VARCHAR(255) NOT NULL,
+DEPT VARCHAR(255) NOT NULL,
+EXP INT NOT NULL,
+COUNTRY VARCHAR(255) NOT NULL,
+CONTINENT VARCHAR(255) NOT NULL,
+SALARY DECIMAL(8,2) NOT NULL,
+EMP_RATING INT NOT NULL,
+MANAGER_ID VARCHAR(255) NOT NULL, 
+PROJ_ID VARCHAR(255) NOT NULL,
+PRIMARY KEY(EMP_ID)); 
+
+------------------------------------------------------------------------
+
+CREATE TABLE employee_db.proj_table(
+PROJECT_ID VARCHAR(255) NOT NULL,
+PROJ_Name VARCHAR(255) NOT NULL,
+DOMAIN VARCHAR(255) NOT NULL,
+START_DATE DATE NOT NULL,
+CLOSURE_DATE DATE NOT NULL,
+DEV_QTR VARCHAR(2) NOT NULL,
+STATUS VARCHAR(255) NOT NULL,
+PRIMARY KEY(PROJECT_ID));
+
+---------------------------------------------------------------------------
+
+CREATE TABLE employee_db.data_science_team(
+EMP_ID VARCHAR(255) NOT NULL,
+FIRST_NAME VARCHAR(255) NOT NULL,
+LAST_NAME VARCHAR(255) NOT NULL,
+GENDER CHAR(1) NOT NULL,
+ROLE VARCHAR(255) NOT NULL,
+DEPT VARCHAR(255) NOT NULL,
+EXP INT NOT NULL,
+COUNTRY VARCHAR(255) NOT NULL,
+CONTINENT VARCHAR(255) NOT NULL,
+PRIMARY KEY(EMP_ID));
+-----------------------------------------------------------------------
+
+SELECT EMP_ID, FIRST_NAME, LAST_NAME, GENDER,DEPT
+FROM employee_db.emp_record_table;
+
+----------------------------------------------------------------
+SELECT * FROM employee_db.emp_record_table;
+
+-------------------------------------------------------------------------------------------------
+
+SELECT EMP_ID, FIRST_NAME, LAST_NAME, GENDER FROM employee_db.emp_record_table,DEPT,EMP_RATING
+WHERE EMP_RATING < 2 AND EMP_RATING > 4;
+-------------------------------------------------------------------------------------------------
+
+SELECT EMP_ID, FIRST_NAME, LAST_NAME, GENDER FROM employee_db.emp_record_table,DEPT,EMP_RATING
+WHERE EMP_RATING < 2 AND EMP_RATING > 4;
+-----------------------------------------------------------------------------------------------
+
+SELECT EMP_ID, FIRST_NAME, LAST_NAME, GENDER,DEPT,EMP_RATING FROM employee_db.emp_record_table
+WHERE EMP_RATING between 2 and 4 ORDER BY EMP_RATING;
+-----------------------------------------------------------------------------------------------------
+
+SELECT CONCAT_WS(', ',FIRST_NAME,LAST_NAME) AS 'FULL NAME'
+FROM employee_db.emp_record_table
+WHERE DEPT = "FINANCE";
+---------------------------------------------------------------------------------------------------------
+SELECT 
+    CONCAT(emp_record_table.FIRST_NAME, ' ', emp_record_table.LAST_NAME) AS emp_name,
+    COUNT(DISTINCT emp_record_table.EMP_ID) AS num_reporters
+FROM 
+    employee_db.emp_record_table
+    JOIN 
+    emp_record_table AS reporters ON emp_record_table.EMP_ID = reporters.MANAGER_ID 
+        OR (emp_record_table.MANAGER_I IS NULL AND emp_record_table.EMP_ID = reporters.MANAGER_ID)
+GROUP BY 
+    emp_record_table.EMP_ID, emp_record_table.FIRST_NAM, emp_record_table.LAST_NAME
+HAVING 
+    COUNT(DISTINCT emp_record_table.EMP_ID) > 0
+ORDER BY 
+    emp_record_table.EMP_ID;
+--------------------------------------------------------------------------------------------------
+SELECT * FROM employee_db.emp_record_table WHERE DEPT="Finance"
+UNION
+SELECT * FROM employee_db.emp_record_table WHERE DEPT="Healthcare";
+
+------------------------------------------------------------------------------------------------
+SELECT ROLE, MAX(SALARY) AS max_salary, MIN(SALARY) AS min_salary 
+FROM employee_db.emp_record_table
+GROUP BY ROLE
+ORDER BY ROLE;
+---------------------------------------------------------------------------------------------------
+SELECT *,
+RANK() OVER( order by EXP) as 'rank'
+FROM employee_db.emp_record_table;
+-----------------------------------------------------------------------------------------
+CREATE VIEW Employee_view AS 
+SELECT EMP_ID, FIRST_NAME,LAST_NAME,COUNTRY,DEPT,SALARY
+FROM employee_db.emp_record_table
+WHERE SALARY > 6000;
+----------------------------------------------------------------------------------
+SELECT *
+FROM employee_db.emp_record_table
+WHERE EXP > 10;
+--------------------------------------------------------------------------------------
+DELIMITER &&
+CREATE PROCEDURE experience_details()
+BEGIN
+SELECT EMP_ID,FIRST_NAME,LAST_NAME,EXP 
+FROM emp_record_table
+WHERE EXP>3;
+END &&
+CALL experience_details();
+----------------------------------------------------------------------------------
+DELIMITER &&
+CREATE FUNCTION jobprofile_match(
+EXP INT
+)
+RETURNS VARCHAR(250)
+DETERMINISTIC
+BEGIN
+DECLARE standard_role VARCHAR(250);
+IF EXP <= 2 THEN SET standard_role ='Junior Data Scientist';
+ELSEIF ( EXP >=2 and EXP <5) THEN SET STANDARD_ROLE ='Associate Data Scientist';
+ELSEIF ( EXP >=5 and EXP <10) THEN SET STANDARD_ROLE ='Senior Data Scientist';
+ELSEIF ( EXP >=10 and EXP <12) THEN SET STANDARD_ROLE ='Lead Data Scientist';
+ELSEIF ( EXP >=12 and EXP <16) THEN SET STANDARD_ROLE ='Manager';
+END IF;
+RETURN (STANDARD_ROLE);
+END &&
+
+SELECT exp, jobprofile_match(EXP)
+FROM employee_db.data_science_team;
+
+-----------------------------------------------------------------------------------
+CREATE INDEX idx_frst_name
+ON emp_record_table(FIRST_NAME(25));
+SELECT * FROM employee_db.emp_record_table
+WHERE FIRST_NAME='Eric';
+#Checking indexes
+SHOW INDEXES FROM employee_db.emp_record_table;
+-------------------------------------------------------------------------------------------------------------------------
+SELECT EMP_ID, FIRST_NAME, LAST_NAME, SALARY, EMP_RATING, round((0.05 * SALARY * EMP_RATING),0) AS Bonus, 
+(SALARY + round((0.05 * SALARY * EMP_RATING),0)) AS Total_salary
+FROM employee_db.emp_record_table
+ORDER BY Total_salary asc;
+----------------------------------------------------------------------------------------------------------------------
+SELECT COUNTRY,CONTINENT, ROUND(AVG(SALARY), 2)
+FROM employee_db.emp_record_table 
+GROUP BY COUNTRY,CONTINENT;
+
+------------------------------------------------------------
